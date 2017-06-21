@@ -34,6 +34,8 @@ def main():
                         help = 'load data, with [5] split')
     parser.add_argument('--sampledir', type = str, default = './image',
                         help = 'path to the directory put generated samples [./image]')
+    parser.add_argument('--modeldir', type = str, default = './model',
+                        help = 'path to the directory parameter saved [./model]')
     args = parser.parse_args()
     
     sampler = InputSampler(datadir = args.datadir,
@@ -46,7 +48,8 @@ def main():
     wgan = WassersteinGAN(gen, disc, args.nd, sampler)
     wgan.train(batch_size = args.batch_size,
                epochs = args.epochs,
-               sampledir = args.sampledir)
+               sampledir = args.sampledir,
+               modeldir = args.modeldir)
     
 
 class WassersteinGAN:
@@ -90,7 +93,8 @@ class WassersteinGAN:
         
         self.sess = tf.Session()
 
-    def train(self, batch_size = 64, epochs = 20, sampledir = './sample'):
+    def train(self, batch_size = 64, epochs = 20,
+              sampledir = './image', modeldir = './model'):
 
         num_batches = int(self.sampler.data_size/batch_size)
         print('Number of batches : {}, epochs : {}'.format(num_batches, epochs))
@@ -137,7 +141,7 @@ class WassersteinGAN:
                          .save(sampledir + 'sample_{}_{}.png'.format(e, batch))
 
                     
-            self.saver.save(self.sess, 'model_{}epoch.ckpt'.format(e))
+            self.saver.save(self.sess, modeldir + 'model_{}epoch.ckpt'.format(e))
                     
 
 if __name__ == '__main__':
