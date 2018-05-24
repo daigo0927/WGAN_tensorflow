@@ -4,6 +4,7 @@ import os
 import argparse
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 from torch.utils import data
 
 from model import Generator, Discriminator
@@ -15,12 +16,12 @@ class Trainer(object):
     def __init__(self, args):
         self.args = args
         config = tf.ConfigProto()
-        config.gpu_options.allow_growth() = True
+        config.gpu_options.allow_growth = True
         self.sess = tf.Session(config = config)
         self._build_dataloader()
         self._build_graph()
 
-    def _build_graph(self):
+    def _build_dataloader(self):
         dataset = get_dataset(self.args.dataset)
         d_set = dataset(self.args.dataset_dir,
                         self.args.crop_type, self.args.crop_shape,
@@ -100,11 +101,37 @@ class Trainer(object):
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parset.add_argument('--dataset', type = str, required = True,
+    parser.add_argument('--dataset', type = str, required = True,
                         help = 'Target dataset (like CelebA)')
     parser.add_argument('--dataset_dir', type = str, required = True,
                         help = 'Directory containing target dataset')
-    ...
+    parser.add_argument('--n_epoch', type = int, default = 30,
+                        help = '# of epochs [100]')
+    parser.add_argument('--batch_size', type = int, default = 64,
+                        help = 'Batch size [64]')
+    parser.add_argument('--num_workers', type = int, default = 4,
+                        help = '# of workers for dataloading [4]')
+
+    parser.add_argument('--crop_type', type = str, default = 'center',
+                        help = 'Crop type for raw images [center]')
+    parser.add_argument('--crop_shape', nargs = 2, type = int, default = [128, 128],
+                        help = 'Crop shape for raw data [128, 128]')
+    parser.add_argument('--resize_shape', nargs = 2, type = int, default = None,
+                        help = 'Resize shape for raw data [None]')
+    parser.add_argument('--resize_scale', type = float, default = None,
+                        help = 'Resize scale for raw data [None]')
+    parser.add_argument('--image_size', type = int, default = 128,
+                        help = 'Image size to be processed 128')
+
+    parser.add_argument('--z_dim', type = int, default = 128,
+                        help = 'z (fake seed) dimension [128]')
+    parser.add_argument('--n_critic', type = int, default = 5,
+                        help = '# of critic training [5]')
+    parser.add_argument('--lambda_', type = float, default = 10,
+                        help = 'Grdient penalty coefficient [10]')
+
+    parser.add_argument('--resume', type = str, default = None,
+                        help = 'Learned parameter checkpoint [None]')
     args = parser.parse_args()
     for key, item in vars(args).items():
         print(f'{key} : {item}')
@@ -114,136 +141,3 @@ if __name__ == '__main__':
     trainer = Trainer(args)
     trainer.train()
     
-# def main():
-    
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('-e', '--epochs', type = int, default = 20,
-#                         help = 'number of epochs [20]')
-#     parser.add_argument('--train_size', type = int, default = np.inf,
-#                         help = 'whole size of training data [all]')
-#     parser.add_argument('--batch_size', type = int, default = 64,
-#                         help = 'batch size [64]')
-#     parser.add_argument('--nd', type = int, default = 5,
-#                         help = 'discriminator training ratio [5]')
-#     parser.add_argument('--target_size', type = int, default = 108,
-#                         help = 'target area of original image')
-#     parser.add_argument('--image_size', type = int, default = 64,
-#                         help = 'size of generated images')
-#     parser.add_argument('--datadir', type = str, nargs = '+', required = True,
-#                         help = 'path to the directory contains training (image) data')
-#     parser.add_argument('--split', type = int, default = 5,
-#                         help = 'load data, with [5] split')
-#     parser.add_argument('--sampledir', type = str, default = './image',
-#                         help = 'path to the directory put generated samples [./image]')
-#     parser.add_argument('--modeldir', type = str, default = './model',
-#                         help = 'path to the directory parameter saved [./model]')
-#     args = parser.parse_args()
-    
-#     sampler = InputSampler(datadir = args.datadir,
-#                            target_size = args.target_size, image_size = args.image_size,
-#                            split = args.split, num_utilize = args.train_size)
-    
-#     disc = Discriminator(image_size = args.image_size)
-#     gen = Generator(image_size = args.image_size)
-    
-#     wgan = WassersteinGAN(gen, disc, args.nd, sampler)
-#     wgan.train(batch_size = args.batch_size,
-#                epochs = args.epochs,
-#                sampledir = args.sampledir,
-#                modeldir = args.modeldir)
-    
-
-# class WassersteinGAN:
-
-#     def __init__(self, gen, disc, d_iter, sampler):
-
-#         self.gen = gen
-#         self.disc = disc
-#         self.d_iter = d_iter
-#         # self.x_dim = self.disc.x_dim
-#         self.z_dim = self.gen.z_dim
-#         self.sampler = sampler
-#         self.image_size = self.gen.image_size
-
-#         self.x = tf.placeholder(tf.float32, [None, self.image_size, self.image_size, 3], name = 'x')
-#         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name = 'z')
-
-#         self.x_ = self.gen(self.z)
-
-#         self.d = self.disc(self.x, reuse = False)
-#         self.d_ = self.disc(self.x_)
-
-#         self.g_loss = tf.reduce_mean(self.d_)
-#         self.d_loss = tf.reduce_mean(self.d) - tf.reduce_mean(self.d_)
-
-#         self.reg = apply_regularization(l1_regularizer(2.5e-5),
-#                                         weights_list = [var for var in tf.global_variables() if 'weights' in var.name])
-
-#         self.g_loss_reg = self.g_loss + self.reg
-#         self.d_loss_reg = self.d_loss + self.reg
-
-#         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-#             self.d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
-#                         .minimize(self.d_loss_reg, var_list = self.disc.vars)
-#             self.g_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
-#                          .minimize(self.g_loss_reg, var_list = self.gen.vars)
-
-#         self.d_clip = [v.assign(tf.clip_by_value(v, -0.01, 0.01)) for v in self.disc.vars]
-
-#         self.saver = tf.train.Saver()
-        
-#         self.sess = tf.Session()
-
-#     def train(self, batch_size = 64, epochs = 20,
-#               sampledir = './image', modeldir = './model'):
-
-#         num_batches = int(self.sampler.data_size/batch_size)
-#         print('Number of batches : {}, epochs : {}'.format(num_batches, epochs))
-
-#         # plt.ion()
-#         self.sess.run(tf.global_variables_initializer())
-
-#         for e in range(epochs):
-
-#             for batch in range(num_batches):
-
-#                 if batch in np.linspace(0, num_batches, self.sampler.split+1, dtype = int):
-#                     self.sampler.reload()
-
-#                 d_iter = self.d_iter
-#                 if batch%500 == 0 or batch<25:
-#                     d_iter = 100
-
-#                 for _ in range(d_iter):
-#                     bx = self.sampler.image_sample(batch_size)
-#                     bz = self.sampler.noise_sample(batch_size, self.z_dim)
-#                     self.sess.run(self.d_clip)
-#                     self.sess.run(self.d_opt, feed_dict = {self.x: bx, self.z: bz})
-
-#                 bz = self.sampler.noise_sample(batch_size, self.z_dim)
-#                 self.sess.run(self.g_opt, feed_dict = {self.z: bz, self.x: bz})
-
-                
-#                 if batch%10 == 0:
-#                     bx = self.sampler.image_sample(batch_size)
-#                     bz = self.sampler.noise_sample(batch_size, self.z_dim)
-#                     d_loss = self.sess.run(self.d_loss, feed_dict = {self.x: bx, self.z: bz})
-#                     g_loss = self.sess.run(self.g_loss, feed_dict = {self.z: bz, self.x: bx})
-                    
-#                     print('epoch : {}, batch : {}, d_loss : {}, g_loss : {}'\
-#                           .format(e, batch, d_loss - g_loss, g_loss))
-
-#                 if batch%100 == 0:
-#                     bz = self.sampler.noise_sample(batch_size, self.z_dim)
-#                     fake_images = self.sess.run(self.x_, feed_dict = {self.z: bz})
-#                     fake_images = combine_images(fake_images)
-#                     fake_images = fake_images*127.5 + 127.5
-#                     Image.fromarray(fake_images.astype(np.uint8))\
-#                          .save(sampledir + 'sample_{}_{}.png'.format(e, batch))
-
-                    
-#             self.saver.save(self.sess, modeldir + 'model_{}epoch.ckpt'.format(e))
-                    
-
-# if __name__ == '__main__':
-#     main()

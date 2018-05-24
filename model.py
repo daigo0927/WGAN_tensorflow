@@ -46,7 +46,7 @@ class Generator(object):
             num_channel = 1024
             for _ in range(int(np.log2(self.image_size/4))-1):
                 num_channel /= 2
-                x = tf.layers.Conv2DTranspose(num_channel, (5, 5), (2, 2), 'same')(x)
+                x = tf.layers.Conv2DTranspose(int(num_channel), (5, 5), (2, 2), 'same')(x)
                 x = tf.layers.BatchNormalization()(x)
                 x = tf.nn.relu(x)
                 
