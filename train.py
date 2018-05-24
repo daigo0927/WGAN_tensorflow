@@ -30,7 +30,7 @@ class Trainer(object):
         self.d_loader = data.DataLoader(d_set, shuffle = True,
                                         batch_size = self.args.batch_size,
                                         num_workers = self.args.num_workers,
-                                        pin_memory = True)
+                                        pin_memory = True, drop_last = True)
 
     def _build_graph(self):
         self.z = tf.placeholder(tf.float32, shape = (None, self.args.z_dim),
