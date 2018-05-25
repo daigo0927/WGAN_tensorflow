@@ -12,13 +12,13 @@ class Discriminator(object):
         with tf.variable_scope(self.name) as vs:
             if reuse:
                 vs.reuse_variables()
-            x = tf.layers.Conv2D(64, (5, 5), (2, 2), 'same')(x)
+            x = tf.layers.Conv2D(64, (4, 4), (2, 2), 'same')(x)
             x = tf.nn.leaky_relu(x, 0.2)
-            x = tf.layers.Conv2D(128, (5, 5), (2, 2), 'same')(x)
+            x = tf.layers.Conv2D(128, (4, 4), (2, 2), 'same')(x)
             x = tf.nn.leaky_relu(x, 0.2)
-            x = tf.layers.Conv2D(256, (5, 5), (2, 2), 'same')(x)
+            x = tf.layers.Conv2D(256, (4, 4), (2, 2), 'same')(x)
             x = tf.nn.leaky_relu(x, 0.2)
-            x = tf.layers.Conv2D(512, (5, 5), (2, 2), 'same')(x)
+            x = tf.layers.Conv2D(512, (4, 4), (2, 2), 'same')(x)
             x = tf.nn.leaky_relu(x, 0.2)
             x = tf.layers.flatten(x)
             
@@ -40,17 +40,17 @@ class Generator(object):
         with tf.variable_scope(self.name) as vs:
             x = tf.layers.Dense(4*4*1024)(z)
             x = tf.layers.BatchNormalization()(x)
-            x = tf.nn.relu(x)
+            x = tf.nn.leaky_relu(x, 0.2)
             x = tf.reshape(x, (-1, 4, 4, 1024))
             
             num_channel = 1024
             for _ in range(int(np.log2(self.image_size/4))-1):
                 num_channel /= 2
-                x = tf.layers.Conv2DTranspose(int(num_channel), (5, 5), (2, 2), 'same')(x)
+                x = tf.layers.Conv2DTranspose(int(num_channel), (4, 4), (2, 2), 'same')(x)
                 x = tf.layers.BatchNormalization()(x)
-                x = tf.nn.relu(x)
+                x = tf.nn.leaky_relu(x, 0.2)
                 
-            x = tf.layers.Conv2DTranspose(3, (5, 5), (2, 2), 'same')(x)
+            x = tf.layers.Conv2DTranspose(3, (4, 4), (2, 2), 'same')(x)
             return tf.nn.tanh(x)
 
     @property
