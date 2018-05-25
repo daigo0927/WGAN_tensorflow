@@ -53,12 +53,11 @@ class BaseDataset(Dataset, metaclass = ABCMeta):
             img = cropper(img)
 
         if self.resize_shape is not None:
-            resizer = partial(cv2.resize, dsize = (0,0), dst = self.resize_shape)
-            img = resizer(img)
+            img = cv2.resize(img, tuple(self.resize_shape))
             
         elif self.resize_scale is not None:
-            resizer = partial(cv2.resize, dsize = (0,0), fx = self.resize_scale, fy = self.resize_scale)
-            img = resizer(img)
+            img = cv2.resize(img, dsize = (0, 0),
+                              fx = self.resize_scale, fy = self.resize_scale)
 
         return np.array(img)
 
