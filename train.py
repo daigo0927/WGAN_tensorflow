@@ -71,7 +71,7 @@ class Trainer(object):
         for e in range(self.args.n_epoch):
             for i, images in enumerate(self.d_loader):
                 
-                images = images.numpy()/255.0
+                images = images.numpy()/127.5 - 1.
                 
                 for _ in range(self.args.n_critic):
                     randoms = np.random.uniform(-1, 1, (self.args.batch_size, self.args.z_dim))
@@ -94,6 +94,7 @@ class Trainer(object):
                     Image.fromarray(images_fake.astype(np.uint8))\
                         .save(f'./sample/sample_{str(e).zfill(3)}_{str(i).zfill(4)}.png')
 
+            print('')
             if not os.path.exists('./model'):
                 od.mkdir('/model')
             self.saver.save(self.sess, f'./model/model_{str(e).zfill(3)}.ckpt')
@@ -105,8 +106,8 @@ if __name__ == '__main__':
                         help = 'Target dataset (like CelebA)')
     parser.add_argument('--dataset_dir', type = str, required = True,
                         help = 'Directory containing target dataset')
-    parser.add_argument('--n_epoch', type = int, default = 30,
-                        help = '# of epochs [100]')
+    parser.add_argument('--n_epoch', type = int, default = 15,
+                        help = '# of epochs [15]')
     parser.add_argument('--batch_size', type = int, default = 64,
                         help = 'Batch size [64]')
     parser.add_argument('--num_workers', type = int, default = 4,
@@ -116,12 +117,12 @@ if __name__ == '__main__':
                         help = 'Crop type for raw images [center]')
     parser.add_argument('--crop_shape', nargs = 2, type = int, default = [128, 128],
                         help = 'Crop shape for raw data [128, 128]')
-    parser.add_argument('--resize_shape', nargs = 2, type = int, default = None,
-                        help = 'Resize shape for raw data [None]')
+    parser.add_argument('--resize_shape', nargs = 2, type = int, default = [64, 64],
+                        help = 'Resize shape for raw data [64, 64]')
     parser.add_argument('--resize_scale', type = float, default = None,
                         help = 'Resize scale for raw data [None]')
-    parser.add_argument('--image_size', type = int, default = 128,
-                        help = 'Image size to be processed 128')
+    parser.add_argument('--image_size', type = int, default = 64,
+                        help = 'Image size to be processed [64]')
 
     parser.add_argument('--z_dim', type = int, default = 128,
                         help = 'z (fake seed) dimension [128]')
